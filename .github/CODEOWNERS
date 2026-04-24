@@ -1,0 +1,6 @@
+# CODEOWNERS — https://docs.github.com/en/repositories/managing-your-repositories-settings-and-security/customizing-your-repository/about-code-owners
+#
+# Global owner. All PRs auto-request review from @pabloism0x.
+# Granular ownership can be added per-path when the team grows.
+
+* @pabloism0x

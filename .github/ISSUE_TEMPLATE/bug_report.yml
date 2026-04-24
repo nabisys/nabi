@@ -1,0 +1,93 @@
+name: Bug Report
+description: Report a bug in Nabi
+title: "[bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. Before filing, please:
+
+        - Search existing issues to avoid duplicates.
+        - Verify the bug reproduces on the latest published version.
+        - For security issues, use [Security Advisories](https://github.com/nabisys/nabi/security/advisories/new) instead.
+
+  - type: input
+    id: version
+    attributes:
+      label: Nabi version
+      placeholder: "0.0.1"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: crate
+    attributes:
+      label: Affected crate
+      options:
+        - nabi
+        - nabi-core
+        - nabi-io
+        - nabi-net
+        - nabi-fs
+        - nabi-tls
+        - nabi-runtime
+        - nabi-orchestration
+        - nabi-compat
+        - nabi-macros
+        - nabi-lens
+        - nabi-scope
+        - nabi-test
+        - multiple / unknown
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear, concise description of the bug.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Steps to reproduce the bug. A minimal code example is strongly preferred.
+      render: rust
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What actually happens. Include error messages, stack traces, or panic output.
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, Rust version (`rustc --version`), feature flags enabled.
+      value: |
+        - OS:
+        - Rust version:
+        - Features:
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Anything else that might help diagnose the issue.

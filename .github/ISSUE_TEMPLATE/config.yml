@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://nabi.run
+    about: Read the Nabi documentation and guides before opening an issue.
+  - name: Security vulnerability
+    url: https://github.com/nabisys/nabi/security/advisories/new
+    about: Report security issues privately through GitHub Security Advisories.
