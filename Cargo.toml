@@ -1,0 +1,126 @@
+[workspace]
+resolver = "3"
+members = [
+  "crates/nabi-core",
+  "crates/nabi-io",
+  "crates/nabi-net",
+  "crates/nabi-fs",
+  "crates/nabi-tls",
+  "crates/nabi-runtime",
+  "crates/nabi-orchestration",
+  "crates/nabi-compat",
+  "crates/nabi-macros",
+  "crates/nabi-lens",
+  "crates/nabi-scope",
+  "crates/nabi-test",
+  "crates/nabi",
+]
+
+[workspace.package]
+edition = "2024"
+rust-version = "1.85"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/nabisys/nabi"
+homepage = "https://nabi.run"
+
+[workspace.lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+missing_docs = "warn"
+unreachable_pub = "warn"
+unused_crate_dependencies = "warn"
+
+[workspace.lints.clippy]
+all = { level = "deny", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+nursery = { level = "warn", priority = -1 }
+cargo = { level = "warn", priority = -1 }
+undocumented_unsafe_blocks = "deny"
+missing_safety_doc = "deny"
+missing_errors_doc = "warn"
+missing_panics_doc = "warn"
+module_name_repetitions = "allow"
+must_use_candidate = "allow"
+multiple_crate_versions = "allow"
+dbg_macro = "deny"
+print_stdout = "deny"
+exit = "deny"
+self_named_module_files = "deny"
+allow_attributes_without_reason = "deny"
+todo = "warn"
+unimplemented = "warn"
+clone_on_ref_ptr = "warn"
+unwrap_used = "deny"
+expect_used = "deny"
+
+[workspace.dependencies]
+# internal
+nabi-core = { path = "crates/nabi-core", version = "0.0.1" }
+nabi-io = { path = "crates/nabi-io", version = "0.0.1" }
+nabi-net = { path = "crates/nabi-net", version = "0.0.1" }
+nabi-fs = { path = "crates/nabi-fs", version = "0.0.1" }
+nabi-tls = { path = "crates/nabi-tls", version = "0.0.1" }
+nabi-runtime = { path = "crates/nabi-runtime", version = "0.0.1" }
+nabi-orchestration = { path = "crates/nabi-orchestration", version = "0.0.1" }
+nabi-compat = { path = "crates/nabi-compat", version = "0.0.1" }
+nabi-macros = { path = "crates/nabi-macros", version = "0.0.1" }
+nabi-lens = { path = "crates/nabi-lens", version = "0.0.1" }
+nabi-test = { path = "crates/nabi-test", version = "0.0.1" }
+nabi = { path = "crates/nabi", version = "0.0.1" }
+
+# platform FFI
+io-uring = "0.7"
+libc = "0.2"
+socket2 = "0.6"
+windows-sys = "0.61"
+
+# proc-macro
+syn = "2"
+quote = "1"
+proc-macro2 = "1"
+
+# concurrency and data-structure primitives
+crossbeam-deque = "0.8"
+smallvec = "1"
+bitflags = "2"
+
+# TLS
+rustls = "0.23"
+rustls-pki-types = "1"
+webpki-roots = "1"
+native-tls = "0.2"
+
+# tokio compat
+tokio = "1"
+tokio-util = "0.7"
+futures-core = "0.3"
+futures-util = "0.3"
+pin-project-lite = "0.2"
+
+# nabi-scope binary
+ratatui = "0.30"
+crossterm = "0.29"
+clap = "4"
+opentelemetry = "0.31"
+opentelemetry-otlp = "0.31"
+prometheus = "0.14"
+
+# testing (dev-dep only)
+proptest = "1"
+loom = "0.7"
+tempfile = "3"
+trybuild = "1"
+
+[profile.dev.package."*"]
+opt-level = 3
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+debug = "line-tables-only"
+strip = "debuginfo"
+incremental = false
+
+[profile.bench]
+inherits = "release"
+debug = "full"
+strip = "none"

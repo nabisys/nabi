@@ -1,0 +1,16 @@
+msrv = "1.85"
+cognitive-complexity-threshold = 30
+too-many-lines-threshold = 150
+type-complexity-threshold = 350
+
+disallowed-types = [
+  { path = "std::sync::Mutex", reason = "use atomics or dedicated primitives" },
+  { path = "std::sync::RwLock", reason = "use atomics or dedicated primitives" },
+  { path = "std::sync::Arc", reason = "arena/slab + typed index handles; exceptions in nabi-compat, nabi-macros" },
+  { path = "std::boxed::Box", reason = "arena/slab only; exceptions for dyn trait, nabi-compat, nabi-macros" },
+  { path = "std::any::Any", reason = "use Arena + TypeId -> offset + drop_fn pattern" },
+]
+
+disallowed-methods = [
+  { path = "std::thread::spawn", reason = "use nabi::runtime primitives" },
+]
