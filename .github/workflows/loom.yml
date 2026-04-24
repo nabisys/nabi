@@ -1,0 +1,39 @@
+name: Loom
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "crates/nabi-runtime/**"
+      - "Cargo.lock"
+      - ".github/workflows/loom.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "crates/nabi-runtime/**"
+      - "Cargo.lock"
+      - ".github/workflows/loom.yml"
+  schedule:
+    - cron: "0 2 * * 0"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: --cfg loom
+  LOOM_MAX_PREEMPTIONS: "3"
+
+jobs:
+  loom:
+    name: Loom
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "1.95"
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo test --release -p nabi-runtime --lib
