@@ -22,7 +22,7 @@ pub struct UringAxon {
 }
 
 impl UringAxon {
-    /// Bootstrap a ring with [`PROBE_RING_ENTRIES`] slots in both SQ and CQ.
+    /// Bootstrap a ring with 32 slots in both SQ and CQ.
     ///
     /// # Errors
     ///
