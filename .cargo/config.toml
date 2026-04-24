@@ -1,0 +1,51 @@
+# Cargo configuration for the Nabi workspace.
+#
+# Aliases provide shortcuts for the commands used during development.
+# Some targets require additional flags that cannot be expressed as aliases;
+# those are documented inline where relevant.
+
+[alias]
+
+# --- workspace-wide ---
+
+# Fast compile check across the entire workspace. Mirrors the CI build step
+# without running tests.
+ci = "check --workspace --all-features --all-targets"
+
+# Full clippy pass with all workspace lints promoted to errors.
+# Mirrors the CI clippy job.
+lint = "clippy --workspace --all-features --all-targets -- -D warnings"
+
+# Build and open the rendered documentation for every crate.
+d = "doc --workspace --all-features --no-deps --open"
+
+# Run the workspace test suite.
+t = "test --workspace"
+
+# --- per-crate tests ---
+#
+# Scoped to the crates where most active development happens.
+# For other crates, call `cargo test -p <crate>` directly.
+
+tc = "test -p nabi-core"
+ti = "test -p nabi-io"
+tr = "test -p nabi-runtime"
+to = "test -p nabi-orchestration"
+
+# --- specialised test suites ---
+
+# Miri — undefined-behaviour detection. Requires the nightly toolchain and
+# (typically) the strict provenance flags used in CI:
+#
+#     MIRIFLAGS="-Zmiri-strict-provenance -Zmiri-retag-fields -Zmiri-symbolic-alignment-check" \
+#         cargo m -p nabi-core
+#
+m = "+nightly miri test"
+
+# Loom — permutation testing for concurrency code. Requires the `--cfg loom`
+# RUSTFLAGS to activate loom-aware code paths. The alias builds in release
+# mode since loom explores many interleavings and is too slow otherwise:
+#
+#     RUSTFLAGS="--cfg loom" LOOM_MAX_PREEMPTIONS=3 cargo loom
+#
+loom = "test --release -p nabi-runtime --lib"
