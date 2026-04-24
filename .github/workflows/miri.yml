@@ -8,6 +8,8 @@ on:
       - "crates/nabi-io/**"
       - "crates/nabi-runtime/**"
       - "crates/nabi-orchestration/**"
+      - "!crates/**/LICENSE-*"
+      - "!crates/**/*.md"
       - "Cargo.lock"
       - ".github/workflows/miri.yml"
   pull_request:
@@ -17,6 +19,8 @@ on:
       - "crates/nabi-io/**"
       - "crates/nabi-runtime/**"
       - "crates/nabi-orchestration/**"
+      - "!crates/**/LICENSE-*"
+      - "!crates/**/*.md"
       - "Cargo.lock"
       - ".github/workflows/miri.yml"
   schedule:

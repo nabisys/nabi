@@ -2,7 +2,7 @@
 
 [![Crates.io](https://img.shields.io/crates/v/nabi.svg)](https://crates.io/crates/nabi)
 [![Documentation](https://docs.rs/nabi/badge.svg)](https://docs.rs/nabi)
-[![CI](https://github.com/nabisys/nabi/actions/workflows/ci.yml/badge.svg)](https://github.com/nabisys/nabi/actions/workflows/ci.yml)
+[![CI](https://github.com/nabisys/nabi/actions/workflows/rust.yml/badge.svg?branch=main)](https://github.com/nabisys/nabi/actions/workflows/rust.yml)
 
 > [!WARNING]
 > **Pre-release. Not accepting contributions until 0.1.0.**
