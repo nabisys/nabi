@@ -1,0 +1,15 @@
+# Build files
+target
+Cargo.lock
+.cargo/credentials
+.cargo/credentials.toml
+
+# AI Assistant
+.claude/
+.gemini/
+.cursor/
+
+# IDE
+.zed/
+.idea/
+.vscode/
