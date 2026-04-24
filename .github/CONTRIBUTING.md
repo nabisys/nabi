@@ -1,5 +1,12 @@
 # Contributing to Nabi
 
+> [!WARNING]
+> **Pre-release (before 0.1.0). Not accepting contributions at this time.**
+>
+> Until the 0.1.0 release, the author develops solo. Pull requests will
+> not be reviewed or merged. The guidelines below describe the contribution
+> process that will take effect at 0.1.0
+
 Thank you for your interest in Nabi. Before opening a pull request, please read this document in full.
 
 ## Scope of contributions
