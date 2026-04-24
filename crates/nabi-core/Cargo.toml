@@ -1,0 +1,19 @@
+[package]
+name = "nabi-core"
+description = "Shared primitives for Nabi: NabiId, errors, scheduling hints"
+version = "0.0.1"
+edition = "2024"
+rust-version = "1.85"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/nabisys/nabi"
+homepage = "https://nabi.run"
+readme = "README.md"
+keywords = ["async", "runtime", "nabi", "primitives", "id"]
+categories = ["asynchronous", "data-structures"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[lints]
+workspace = true

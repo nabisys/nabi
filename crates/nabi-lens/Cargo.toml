@@ -1,0 +1,27 @@
+[package]
+name = "nabi-lens"
+description = "Observability emission for Nabi: events, sinks, sampling, metrics"
+version = "0.0.1"
+edition = "2024"
+rust-version = "1.85"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/nabisys/nabi"
+homepage = "https://nabi.run"
+readme = "README.md"
+keywords = ["async", "runtime", "nabi", "observability", "tracing"]
+categories = ["asynchronous", "development-tools::debugging"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[dependencies]
+nabi-core.workspace = true
+nabi-runtime.workspace = true
+nabi-orchestration.workspace = true
+
+[dev-dependencies]
+nabi-test.workspace = true
+
+[lints]
+workspace = true

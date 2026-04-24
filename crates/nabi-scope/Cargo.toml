@@ -1,0 +1,36 @@
+[package]
+name = "nabi-scope"
+description = "Observability TUI for Nabi: live inspection of tasks, conductors, axons"
+version = "0.0.1"
+edition = "2024"
+rust-version = "1.85"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/nabisys/nabi"
+homepage = "https://nabi.run"
+readme = "README.md"
+keywords = ["async", "runtime", "nabi", "observability", "tui"]
+categories = ["asynchronous", "command-line-utilities"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[[bin]]
+name = "nabi-scope"
+path = "src/main.rs"
+
+[dependencies]
+nabi-core.workspace = true
+nabi-lens.workspace = true
+ratatui.workspace = true
+crossterm.workspace = true
+clap = { workspace = true, features = ["derive"] }
+opentelemetry.workspace = true
+opentelemetry-otlp.workspace = true
+prometheus.workspace = true
+
+[dev-dependencies]
+nabi-test.workspace = true
+
+[lints]
+workspace = true

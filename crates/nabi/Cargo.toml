@@ -1,0 +1,50 @@
+[package]
+name = "nabi"
+description = "Async runtime for Rust: io_uring, dual scheduler, orchestration"
+version = "0.0.1"
+edition = "2024"
+rust-version = "1.85"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/nabisys/nabi"
+homepage = "https://nabi.run"
+readme = "../../README.md"
+keywords = ["async", "runtime", "io-uring", "orchestration", "dag"]
+categories = ["asynchronous", "concurrency", "network-programming", "filesystem"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+targets = [
+  "x86_64-unknown-linux-gnu",
+  "aarch64-unknown-linux-gnu",
+  "x86_64-pc-windows-msvc",
+  "aarch64-apple-darwin",
+]
+
+[features]
+default = ["macros"]
+full = ["net", "fs", "tls", "compat", "macros", "lens"]
+net = ["dep:nabi-net"]
+fs = ["dep:nabi-fs"]
+tls = ["dep:nabi-tls", "net"]
+compat = ["dep:nabi-compat"]
+macros = ["dep:nabi-macros"]
+lens = ["dep:nabi-lens"]
+
+[dependencies]
+nabi-core.workspace = true
+nabi-io.workspace = true
+nabi-runtime.workspace = true
+nabi-orchestration.workspace = true
+nabi-net = { workspace = true, optional = true }
+nabi-fs = { workspace = true, optional = true }
+nabi-tls = { workspace = true, optional = true }
+nabi-compat = { workspace = true, optional = true }
+nabi-macros = { workspace = true, optional = true }
+nabi-lens = { workspace = true, optional = true }
+
+[dev-dependencies]
+nabi-test.workspace = true
+
+[lints]
+workspace = true

@@ -1,0 +1,45 @@
+[package]
+name = "nabi-fs"
+description = "Filesystem I/O for Nabi: files, directories, pipes, splice/tee"
+version = "0.0.1"
+edition = "2024"
+rust-version = "1.85"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/nabisys/nabi"
+homepage = "https://nabi.run"
+readme = "README.md"
+keywords = ["async", "runtime", "nabi", "filesystem", "file"]
+categories = ["asynchronous", "filesystem"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+targets = [
+  "x86_64-unknown-linux-gnu",
+  "aarch64-unknown-linux-gnu",
+  "x86_64-pc-windows-msvc",
+  "aarch64-apple-darwin",
+]
+
+[dependencies]
+nabi-core.workspace = true
+nabi-io.workspace = true
+bitflags.workspace = true
+
+[target.'cfg(unix)'.dependencies]
+libc.workspace = true
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { workspace = true, features = [
+  "Win32_Foundation",
+  "Win32_Storage_FileSystem",
+  "Win32_System_IO",
+  "Win32_System_Pipes",
+] }
+
+[dev-dependencies]
+nabi-test.workspace = true
+tempfile.workspace = true
+
+[lints]
+workspace = true

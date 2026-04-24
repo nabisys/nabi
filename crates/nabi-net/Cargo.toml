@@ -1,0 +1,44 @@
+[package]
+name = "nabi-net"
+description = "Network I/O for Nabi: TCP, UDP, Unix sockets"
+version = "0.0.1"
+edition = "2024"
+rust-version = "1.85"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/nabisys/nabi"
+homepage = "https://nabi.run"
+readme = "README.md"
+keywords = ["async", "runtime", "nabi", "network", "tcp"]
+categories = ["asynchronous", "network-programming"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+targets = [
+  "x86_64-unknown-linux-gnu",
+  "aarch64-unknown-linux-gnu",
+  "x86_64-pc-windows-msvc",
+  "aarch64-apple-darwin",
+]
+
+[dependencies]
+nabi-core.workspace = true
+nabi-io.workspace = true
+socket2 = { workspace = true, features = ["all"] }
+
+[target.'cfg(unix)'.dependencies]
+libc.workspace = true
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { workspace = true, features = [
+  "Win32_Foundation",
+  "Win32_Networking_WinSock",
+  "Win32_System_IO",
+] }
+
+[dev-dependencies]
+nabi-test.workspace = true
+proptest.workspace = true
+
+[lints]
+workspace = true

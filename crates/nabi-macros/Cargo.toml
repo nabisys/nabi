@@ -1,0 +1,30 @@
+[package]
+name = "nabi-macros"
+description = "Procedural macros for Nabi: #[main], #[conductor], #[quantum], #[flat], select, join"
+version = "0.0.1"
+edition = "2024"
+rust-version = "1.85"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/nabisys/nabi"
+homepage = "https://nabi.run"
+readme = "README.md"
+keywords = ["async", "runtime", "nabi", "macros", "proc-macro"]
+categories = ["asynchronous", "development-tools::procedural-macro-helpers"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = { workspace = true, features = ["full", "extra-traits"] }
+quote.workspace = true
+proc-macro2.workspace = true
+
+[dev-dependencies]
+trybuild.workspace = true
+
+[lints]
+workspace = true

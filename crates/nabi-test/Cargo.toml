@@ -1,0 +1,27 @@
+[package]
+name = "nabi-test"
+description = "Test utilities for Nabi: mocks, assertions, fixtures"
+version = "0.0.1"
+edition = "2024"
+rust-version = "1.85"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/nabisys/nabi"
+homepage = "https://nabi.run"
+readme = "README.md"
+keywords = ["async", "runtime", "nabi", "test", "mock"]
+categories = ["asynchronous", "development-tools::testing"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[dependencies]
+nabi-core.workspace = true
+nabi-io.workspace = true
+nabi-net.workspace = true
+nabi-fs.workspace = true
+nabi-runtime.workspace = true
+nabi-orchestration.workspace = true
+
+[lints]
+workspace = true

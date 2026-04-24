@@ -1,0 +1,40 @@
+[package]
+name = "nabi-compat"
+description = "Tokio compatibility layer for Nabi: API shim for axum, tonic, sqlx, hyper"
+version = "0.0.1"
+edition = "2024"
+rust-version = "1.85"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/nabisys/nabi"
+homepage = "https://nabi.run"
+readme = "README.md"
+keywords = ["async", "runtime", "nabi", "tokio", "compat"]
+categories = ["asynchronous"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+targets = [
+  "x86_64-unknown-linux-gnu",
+  "aarch64-unknown-linux-gnu",
+  "x86_64-pc-windows-msvc",
+  "aarch64-apple-darwin",
+]
+
+[dependencies]
+nabi-core.workspace = true
+nabi-io.workspace = true
+nabi-net.workspace = true
+nabi-fs.workspace = true
+nabi-runtime.workspace = true
+tokio = { workspace = true, features = ["full"] }
+tokio-util = { workspace = true, features = ["full"] }
+futures-core.workspace = true
+futures-util.workspace = true
+pin-project-lite.workspace = true
+
+[dev-dependencies]
+nabi-test.workspace = true
+
+[lints]
+workspace = true

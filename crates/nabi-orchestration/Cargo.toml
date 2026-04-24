@@ -1,0 +1,27 @@
+[package]
+name = "nabi-orchestration"
+description = "Orchestration for Nabi: Conductor DAGs, stages, quantum batching, resilience"
+version = "0.0.1"
+edition = "2024"
+rust-version = "1.85"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/nabisys/nabi"
+homepage = "https://nabi.run"
+readme = "README.md"
+keywords = ["async", "runtime", "nabi", "orchestration", "dag"]
+categories = ["asynchronous", "concurrency"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[dependencies]
+nabi-core.workspace = true
+nabi-runtime.workspace = true
+
+[dev-dependencies]
+nabi-test.workspace = true
+proptest.workspace = true
+
+[lints]
+workspace = true
