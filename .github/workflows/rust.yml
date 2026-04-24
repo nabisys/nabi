@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - "crates/**"
+      - "!crates/**/LICENSE-*"
+      - "!crates/**/*.md"
       - "Cargo.toml"
       - "Cargo.lock"
       - "rust-toolchain.toml"
@@ -15,6 +17,8 @@ on:
     branches: [main]
     paths:
       - "crates/**"
+      - "!crates/**/LICENSE-*"
+      - "!crates/**/*.md"
       - "Cargo.toml"
       - "Cargo.lock"
       - "rust-toolchain.toml"

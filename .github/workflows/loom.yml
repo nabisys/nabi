@@ -5,12 +5,16 @@ on:
     branches: [main]
     paths:
       - "crates/nabi-runtime/**"
+      - "!crates/nabi-runtime/LICENSE-*"
+      - "!crates/nabi-runtime/**/*.md"
       - "Cargo.lock"
       - ".github/workflows/loom.yml"
   pull_request:
     branches: [main]
     paths:
       - "crates/nabi-runtime/**"
+      - "!crates/nabi-runtime/LICENSE-*"
+      - "!crates/nabi-runtime/**/*.md"
       - "Cargo.lock"
       - ".github/workflows/loom.yml"
   schedule:
