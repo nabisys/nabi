@@ -1,0 +1,83 @@
+name: PR Title Lint
+
+on:
+  pull_request_target:
+    types: [opened, edited, reopened]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    env:
+      EVENT: ${{ github.event_name }}
+      PR_TITLE: ${{ github.event.pull_request.title }}
+      HEAD_COMMIT_MSG: ${{ github.event.head_commit.message }}
+    steps:
+      - name: Validate Conventional Commits format
+        run: |
+          set -euo pipefail
+
+          TYPES='feat|fix|perf|refactor|docs|test|build|ci|chore|revert'
+          SCOPES='core|io|net|fs|tls|runtime|orchestration|compat|macros|lens|scope|test|facade|workspace|deps'
+
+          # Select source by event.
+          if [ "$EVENT" = "pull_request_target" ]; then
+            TITLE="$PR_TITLE"
+            SOURCE="PR title"
+          else
+            # push to main: take commit subject (first line only).
+            TITLE=$(printf '%s' "$HEAD_COMMIT_MSG" | head -n1)
+            SOURCE="commit subject"
+          fi
+
+          # Strip the " (#NN)" suffix that squash merges auto-append on main.
+          TITLE_STRIPPED=$(printf '%s' "$TITLE" | sed -E 's/ \(#[0-9]+\)$//')
+
+          # Pattern: type(scope)!?: subject
+          #     or: type(scope/submodule)!?: subject
+          PATTERN="^($TYPES)\\(($SCOPES)(/[a-z][a-z0-9_]*)?\\)!?: [a-z].+[^.]$"
+
+          if ! [[ "$TITLE_STRIPPED" =~ $PATTERN ]]; then
+            {
+              echo "::error title=Invalid $SOURCE::Does not match Conventional Commits format"
+              echo ""
+              echo "  Source:   $SOURCE"
+              echo "  Got:      \"$TITLE_STRIPPED\""
+              echo ""
+              echo "  Expected: type(scope): subject"
+              echo "        or: type(scope/submodule): subject"
+              echo "        or: type(scope)!: subject          (breaking change)"
+              echo ""
+              echo "  Types:    $TYPES"
+              echo "  Scopes:   $SCOPES"
+              echo ""
+              echo "  Subject:  lowercase start, no trailing period"
+            } >&2
+            exit 1
+          fi
+
+          # Enforce 50-char subject limit (part after ': ').
+          subj="${TITLE_STRIPPED#*: }"
+          len=${#subj}
+          if [ "$len" -gt 50 ]; then
+            {
+              echo "::error title=Subject too long::$SOURCE subject exceeds 50 chars ($len)"
+              echo "  Subject: \"$subj\""
+            } >&2
+            exit 1
+          fi
+
+          echo "$SOURCE OK"
+          echo "  Title:   $TITLE_STRIPPED"
+          echo "  Subject: $subj ($len/50)"

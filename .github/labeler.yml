@@ -1,0 +1,62 @@
+"crate:core":
+  - changed-files:
+      - any-glob-to-any-file: "crates/nabi-core/**"
+
+"crate:io":
+  - changed-files:
+      - any-glob-to-any-file: "crates/nabi-io/**"
+
+"crate:net":
+  - changed-files:
+      - any-glob-to-any-file: "crates/nabi-net/**"
+
+"crate:fs":
+  - changed-files:
+      - any-glob-to-any-file: "crates/nabi-fs/**"
+
+"crate:tls":
+  - changed-files:
+      - any-glob-to-any-file: "crates/nabi-tls/**"
+
+"crate:runtime":
+  - changed-files:
+      - any-glob-to-any-file: "crates/nabi-runtime/**"
+
+"crate:orchestration":
+  - changed-files:
+      - any-glob-to-any-file: "crates/nabi-orchestration/**"
+
+"crate:compat":
+  - changed-files:
+      - any-glob-to-any-file: "crates/nabi-compat/**"
+
+"crate:macros":
+  - changed-files:
+      - any-glob-to-any-file: "crates/nabi-macros/**"
+
+"crate:lens":
+  - changed-files:
+      - any-glob-to-any-file: "crates/nabi-lens/**"
+
+"crate:scope":
+  - changed-files:
+      - any-glob-to-any-file: "crates/nabi-scope/**"
+
+"crate:test":
+  - changed-files:
+      - any-glob-to-any-file: "crates/nabi-test/**"
+
+"crate:facade":
+  - changed-files:
+      - any-glob-to-any-file: "crates/nabi/**"
+
+"crate:workspace":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "Cargo.toml"
+          - "Cargo.lock"
+          - ".cargo/**"
+          - "clippy.toml"
+          - "deny.toml"
+          - "rust-toolchain.toml"
+          - ".github/**"
