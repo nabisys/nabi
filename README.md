@@ -1,4 +1,4 @@
-# nabi
+# Nabi
 
 [![Crates.io](https://img.shields.io/crates/v/nabi.svg)](https://crates.io/crates/nabi)
 [![Documentation](https://docs.rs/nabi/badge.svg)](https://docs.rs/nabi)
