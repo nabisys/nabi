@@ -4,7 +4,7 @@ Thank you for your interest in Nabi. Before opening a pull request, please read 
 
 ## Scope of contributions
 
-Nabi follows a maintainer-led model, similar to Tokio. The core runtime is developed exclusively by the maintainer team to preserve architectural cohesion. External contributions are welcomed and encouraged in specific areas.
+Nabi follows a maintainer-led model. The core runtime is developed exclusively by the maintainer team to preserve architectural cohesion. External contributions are welcomed and encouraged in specific areas.
 
 ### Maintainer-only crates
 
@@ -29,6 +29,10 @@ Pull requests are welcome for:
 - Bug fixes in any crate (discuss in an issue first for non-trivial changes)
 
 If you are unsure whether your change falls within the contributable scope, open an issue before writing code.
+
+### Issues
+
+GitHub issues are reserved for community-reported bugs and feature requests. Internal roadmap work is tracked privately and is submitted directly as pull requests without a linked GitHub issue. Do not open GitHub issues for internal planning or status tracking.
 
 ## Commit message convention
 
@@ -65,7 +69,9 @@ The scope identifies the primary crate affected, using the crate name with the `
 
 **Allowed scopes:**
 
-`core`, `io`, `net`, `fs`, `tls`, `runtime`, `orchestration`, `compat`, `macros`, `lens`, `scope`, `test`, `facade`, `workspace`
+`core`, `io`, `net`, `fs`, `tls`, `runtime`, `orchestration`, `compat`, `macros`, `lens`, `scope`, `test`, `facade`, `workspace`, `deps`
+
+The `deps` scope is reserved for Dependabot and manual dependency bumps. All other scopes correspond to crates in the workspace.
 
 Sub-module scopes are permitted when the change is localized to a specific module within a crate:
 
@@ -74,6 +80,8 @@ feat(runtime/scheduler): add work-stealing deque
 fix(io/uring): handle EINVAL on buf_ring setup
 refactor(orchestration/advisor): simplify guard composition
 ```
+
+Sub-module names must be lowercase, start with a letter, and use only `[a-z0-9_]`. The parent scope must be a valid crate scope from the list above; `deps` and `workspace` do not take sub-modules.
 
 **Multi-crate changes:** choose the dominant crate for the scope and describe the other affected crates in the body.
 
@@ -85,7 +93,7 @@ refactor(workspace): rename Conductor to Regent across all crates
 
 ### Subject
 
-- **50 characters recommended**, 72 characters maximum.
+- **50 characters maximum.** Enforced by CI as a hard failure.
 - **Lowercase.** No capital letter at the start.
 - **No trailing period.**
 - **Imperative mood** — "add", not "added" or "adds".
@@ -106,7 +114,7 @@ chore: update deps
 feat(runtime): add work-stealing scheduler with local queues
 fix(io/uring): handle partial reads in multishot recv
 refactor(orchestration): split guard composition from advisor
-chore(deps): bump rustls from 0.23.20 to 0.23.21
+ci(deps): bump actions/checkout from 4 to 5
 ```
 
 ### Body
@@ -148,7 +156,7 @@ thread-per-core tasks, run_stealing for work-stealing tasks, or
 run_blocking for blocking operations.
 ```
 
-**Issue references** use `Refs:` or `Fixes:` only. Nabi uses Linear for issue tracking; Linear identifiers must **not** appear in commit messages. `Closes:` is forbidden in commits (reserved for pull request descriptions targeting GitHub issues).
+**Issue references** use `Refs:` or `Fixes:` only, and only when the PR resolves a GitHub issue (community-reported). Internal work does not reference GitHub issues. Linear identifiers must never appear in commit messages. `Closes:` is forbidden in commits (reserved for pull request descriptions targeting GitHub issues).
 
 ```
 Refs: #42
@@ -199,11 +207,11 @@ Allowed types are the same as the commit type list above.
 
 ### Title
 
-Pull request titles follow the Conventional Commits format and are **45 characters maximum** (excluding the `(#NN)` suffix that GitHub appends on squash merge).
+Pull request titles follow the same rules as commit subjects: Conventional Commits format with a 50-character subject limit, enforced by CI. On squash merge, the PR title becomes the commit title with `(#NN)` appended automatically by GitHub.
 
 ### Body
 
-The PR body uses the repository's template with `Problem`, `Solution`, and optionally `Closes #NN` for GitHub-tracked issues. Do not reference Linear identifiers.
+The PR body uses the repository's template with `Problem`, `Solution`, and optionally `Closes #NN` for GitHub-tracked issues. Do not reference internal issue identifiers.
 
 ### Size
 
@@ -220,17 +228,67 @@ Squash merge is the only accepted merge strategy. The maintainer merges pull req
 
 On merge, the squash commit title mirrors the PR title (with `(#NN)` appended automatically). **The squash commit body is left empty** — all discussion, rationale, and linked issues remain accessible via the PR itself, which is the permanent record.
 
+## Labels
+
+The repository uses 16 labels. Every label is either auto-applied by CI or applied manually by the PR author. Maintainers do not apply labels during review.
+
+### Auto-applied
+
+**`crate:*`** — applied by `.github/labeler.yml` based on changed file paths. 14 labels, one per crate plus `crate:workspace` for root configuration. Do not apply manually.
+
+- `crate:core`, `crate:io`, `crate:net`, `crate:fs`, `crate:tls`
+- `crate:runtime`, `crate:orchestration`, `crate:compat`, `crate:macros`
+- `crate:lens`, `crate:scope`, `crate:test`, `crate:facade`
+- `crate:workspace` — root config, CI, `.cargo/`, `.github/`
+
+**`safety:unsafe`** — applied when the diff contains the `unsafe` keyword. Triggers mandatory review focus on the unsafe block. Do not apply manually.
+
+### Manual
+
+**`needs-adr`** — applied by the PR author when the change introduces a design decision that requires an Architecture Decision Record.
+
+Apply `needs-adr` when the pull request:
+
+- Introduces or modifies a root principle (arena-centric ownership, dual-scheduler separation, I/O completion-first, etc.)
+- Selects among two or more valid options with non-trivial rationale
+- Changes an external boundary: public API signature, wire format, FFI boundary, MSRV, edition, or toolchain
+
+Do **not** apply `needs-adr` for:
+
+- Implementation of an already-decided principle
+- Refactors, bug fixes, renames
+- Dependency version bumps
+- Test or documentation additions
+- CI tuning
+
+When in doubt, apply the label. ADR drafting happens in parallel with the pull request and must be completed before merge.
+
+### ADR visibility
+
+ADRs are maintained internally and are not published. **Do not** link to the ADR, reference its identifier, or quote its content in the pull request title, description, commit message, or comments. The `needs-adr` label alone communicates that an ADR exists.
+
+A single ADR may span multiple pull requests; re-apply the label to each.
+
 ## Reverting commits
 
-Revert commits use Git's default format, not Conventional Commits:
+Revert commits follow the Conventional Commits format. The default subject generated by `git revert` must be rewritten to conform.
+
+Use the `revert` type with the scope of the crate being reverted:
 
 ```
-Revert "feat(runtime): add work-stealing scheduler"
+revert(runtime): work-stealing scheduler
 
-This reverts commit abc123def456.
+Problem: the work-stealing scheduler introduced in abc123d caused
+deadlocks under high contention; root cause analysis is pending.
+
+Solution: revert to restore stability while the issue is
+investigated.
+
+Reverts: abc123def456
+Refs: #142
 ```
 
-The subject is generated by `git revert` and is not edited to conform to the Conventional Commits format. Include a brief explanation in the body describing the reason for the revert.
+The `Reverts:` footer records the original commit hash. If the revert is tracked by a GitHub issue, include `Refs:` or `Fixes:` as usual. Internal issue identifiers do not appear.
 
 ## License
 
