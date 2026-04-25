@@ -107,20 +107,24 @@ mod tests {
     #[test]
     fn child_increments_depth() {
         let root = Nid::root();
-        let child = root.child().expect("child must not overflow");
+        let Ok(child) = root.child() else {
+            unreachable!("root has depth 0, child cannot overflow")
+        };
         assert_eq!(child.depth(), 1);
     }
 
     #[test]
     fn child_inherits_worker() {
         let root = Nid::root_on(7);
-        let child = root.child().expect("child must not overflow");
+        let Ok(child) = root.child() else {
+            unreachable!("root has depth 0, child cannot overflow")
+        };
         assert_eq!(child.worker_id(), 7);
     }
 
     #[test]
     fn child_depth_overflow_at_u16_max() {
-        let raw = (1u128 << SEQ_SHIFT) | ((u16::MAX as u128) << DEPTH_SHIFT);
+        let raw = (1u128 << SEQ_SHIFT) | (u128::from(u16::MAX) << DEPTH_SHIFT);
         let maxed = Nid(raw);
         assert!(matches!(maxed.child(), Err(NidError::DepthOverflow)));
     }

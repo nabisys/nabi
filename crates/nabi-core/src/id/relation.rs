@@ -29,10 +29,31 @@ impl Nid {
 mod tests {
     use super::*;
 
+    fn build_chain() -> (Nid, Nid, Nid) {
+        let root = Nid::root();
+        let Ok(child) = root.child() else {
+            unreachable!("root has depth 0, child cannot overflow")
+        };
+        let Ok(grandchild) = child.child() else {
+            unreachable!("child has depth 1, grandchild cannot overflow")
+        };
+        (root, child, grandchild)
+    }
+
+    fn build_siblings() -> (Nid, Nid, Nid) {
+        let root = Nid::root();
+        let Ok(a) = root.child() else {
+            unreachable!("root has depth 0, child cannot overflow")
+        };
+        let Ok(b) = root.child() else {
+            unreachable!("root has depth 0, child cannot overflow")
+        };
+        (root, a, b)
+    }
+
     #[test]
     fn is_parent_of_direct_child() {
-        let root = Nid::root();
-        let child = root.child().expect("child must not overflow");
+        let (root, child, _) = build_chain();
         assert!(root.is_parent_of(child));
     }
 
@@ -44,25 +65,19 @@ mod tests {
 
     #[test]
     fn is_parent_of_rejects_grandchild() {
-        let root = Nid::root();
-        let child = root.child().expect("child must not overflow");
-        let grandchild = child.child().expect("child must not overflow");
+        let (root, _, grandchild) = build_chain();
         assert!(!root.is_parent_of(grandchild));
     }
 
     #[test]
     fn is_parent_of_rejects_sibling() {
-        let root = Nid::root();
-        let a = root.child().expect("child must not overflow");
-        let b = root.child().expect("child must not overflow");
+        let (_, a, b) = build_siblings();
         assert!(!a.is_parent_of(b));
     }
 
     #[test]
     fn is_ancestor_of_chain() {
-        let root = Nid::root();
-        let child = root.child().expect("child must not overflow");
-        let grandchild = child.child().expect("child must not overflow");
+        let (root, child, grandchild) = build_chain();
         assert!(root.is_ancestor_of(child));
         assert!(root.is_ancestor_of(grandchild));
         assert!(child.is_ancestor_of(grandchild));
@@ -76,9 +91,7 @@ mod tests {
 
     #[test]
     fn is_ancestor_of_rejects_sibling() {
-        let root = Nid::root();
-        let a = root.child().expect("child must not overflow");
-        let b = root.child().expect("child must not overflow");
+        let (_, a, b) = build_siblings();
         assert!(!a.is_ancestor_of(b));
         assert!(!b.is_ancestor_of(a));
     }
