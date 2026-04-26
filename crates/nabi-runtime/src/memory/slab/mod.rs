@@ -7,5 +7,5 @@ mod key;
 )]
 mod slab;
 
-pub use key::{Generation, SlabKey};
+pub use key::SlabKey;
 pub use slab::{Slab, SlabError};
