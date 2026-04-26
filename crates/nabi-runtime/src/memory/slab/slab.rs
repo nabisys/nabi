@@ -3,7 +3,8 @@
 use core::fmt;
 use core::mem::MaybeUninit;
 
-use super::key::{Generation, SlabKey};
+use super::super::generation::Generation;
+use super::key::SlabKey;
 
 const FREE_SENTINEL: u32 = u32::MAX;
 
