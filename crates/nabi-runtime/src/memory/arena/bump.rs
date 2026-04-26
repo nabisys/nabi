@@ -11,6 +11,10 @@ use super::super::generation::Generation;
 use super::builder::BumpAllocatorBuilder;
 use super::phase::ArenaPhase;
 
+/// Backing-buffer alignment. Matches typical libc malloc on 64-bit
+/// targets and bounds the largest `T::align` an arena can satisfy.
+const MAX_ALIGN: usize = 16;
+
 /// Errors emitted by [`BumpAllocator`] operations.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ArenaError {
@@ -89,7 +93,8 @@ struct DropEntry {
 /// [`alloc`]: BumpAllocator::alloc
 /// [`alloc_with_drop`]: BumpAllocator::alloc_with_drop
 pub struct BumpAllocator {
-    buffer: Vec<MaybeUninit<u8>>,
+    buffer: NonNull<u8>,
+    capacity: usize,
     cursor: usize,
     drops: Vec<DropEntry>,
     drop_capacity: usize,
@@ -109,13 +114,17 @@ impl BumpAllocator {
         if bytes == 0 {
             return Err(ArenaError::ZeroCapacity);
         }
-        let mut buffer = Vec::with_capacity(bytes);
-        // SAFETY: MaybeUninit<u8> has no validity invariant, so any byte
-        // pattern is acceptable. Setting len to capacity exposes only
-        // the storage we already own.
-        unsafe { buffer.set_len(bytes) };
+        let layout = buffer_layout(bytes)?;
+        // SAFETY: layout has nonzero size (bytes > 0 checked above) and
+        // a valid power-of-two alignment (MAX_ALIGN). The returned
+        // region is owned exclusively by this allocator until Drop.
+        let raw = unsafe { std::alloc::alloc(layout) };
+        let Some(buffer) = NonNull::new(raw) else {
+            std::alloc::handle_alloc_error(layout);
+        };
         Ok(Self {
             buffer,
+            capacity: bytes,
             cursor: 0,
             drops: Vec::with_capacity(drop_slots),
             drop_capacity: drop_slots,
@@ -130,32 +139,32 @@ impl BumpAllocator {
                 current: self.phase,
             });
         }
-        let base = self.buffer.as_mut_ptr().cast::<u8>() as usize;
-        let current = base + self.cursor;
-        let aligned = (current + layout.align() - 1) & !(layout.align() - 1);
-        let offset = aligned - base;
-        let new_cursor =
-            offset
-                .checked_add(layout.size())
-                .ok_or_else(|| ArenaError::Exhausted {
-                    requested: layout.size(),
-                    available: self.buffer.len() - self.cursor,
-                })?;
-        if new_cursor > self.buffer.len() {
-            return Err(ArenaError::Exhausted {
-                requested: new_cursor - self.cursor,
-                available: self.buffer.len() - self.cursor,
-            });
+        if layout.align() > MAX_ALIGN {
+            return Err(self.exhausted(layout.size() + layout.align()));
         }
-        // SAFETY: `offset < buffer.len()` (checked above) and the buffer
-        // is backed by a single allocation, so `base + offset` is in-
-        // bounds. `cursor` is bumped past the entire allocation, so no
-        // future call can hand out the same range.
-        let ptr = unsafe { (base as *mut u8).add(offset) };
+        let aligned = align_up(self.cursor, layout.align());
+        let new_cursor = aligned
+            .checked_add(layout.size())
+            .ok_or_else(|| self.exhausted(layout.size()))?;
+        if new_cursor > self.capacity {
+            return Err(self.exhausted(new_cursor - self.cursor));
+        }
+        // SAFETY: `aligned < capacity` (checked above) and `buffer` has
+        // provenance over the entire region returned by std::alloc;
+        // `add` preserves that provenance.
+        let ptr = unsafe { self.buffer.as_ptr().add(aligned) };
         self.cursor = new_cursor;
-        // SAFETY: `ptr` is non-null because it points into a non-empty
-        // Vec allocation owned by `self`.
+        // SAFETY: `buffer` is non-null and `add` of an in-bounds offset
+        // cannot produce null.
         Ok(unsafe { NonNull::new_unchecked(ptr) })
+    }
+
+    #[inline]
+    const fn exhausted(&self, requested: usize) -> ArenaError {
+        ArenaError::Exhausted {
+            requested,
+            available: self.capacity - self.cursor,
+        }
     }
 
     /// Allocates a `T: FlatLayout` value, returning a typed pointer.
@@ -220,16 +229,9 @@ impl BumpAllocator {
     ) -> Result<NonNull<[MaybeUninit<T>]>, ArenaError> {
         let bytes = core::mem::size_of::<T>()
             .checked_mul(count)
-            .ok_or_else(|| ArenaError::Exhausted {
-                requested: usize::MAX,
-                available: self.buffer.len() - self.cursor,
-            })?;
-        let layout = Layout::from_size_align(bytes, core::mem::align_of::<T>()).map_err(|_| {
-            ArenaError::Exhausted {
-                requested: bytes,
-                available: self.buffer.len() - self.cursor,
-            }
-        })?;
+            .ok_or_else(|| self.exhausted(usize::MAX))?;
+        let layout = Layout::from_size_align(bytes, core::mem::align_of::<T>())
+            .map_err(|_| self.exhausted(bytes))?;
         let raw = self.alloc_raw(layout)?;
         let typed = raw.cast::<MaybeUninit<T>>();
         Ok(NonNull::slice_from_raw_parts(typed, count))
@@ -284,15 +286,15 @@ impl BumpAllocator {
     /// Returns the total backing capacity in bytes.
     #[inline]
     #[must_use]
-    pub fn capacity(&self) -> usize {
-        self.buffer.len()
+    pub const fn capacity(&self) -> usize {
+        self.capacity
     }
 
     /// Returns bytes still available in the active phase.
     #[inline]
     #[must_use]
-    pub fn available(&self) -> usize {
-        self.buffer.len() - self.cursor
+    pub const fn available(&self) -> usize {
+        self.capacity - self.cursor
     }
 
     fn run_drops(&mut self) {
@@ -317,6 +319,13 @@ unsafe fn drop_in_place_for<T>(ptr: *mut u8) {
 impl Drop for BumpAllocator {
     fn drop(&mut self) {
         self.run_drops();
+        let Ok(layout) = Layout::from_size_align(self.capacity, MAX_ALIGN) else {
+            return;
+        };
+        // SAFETY: `buffer` was allocated by `std::alloc::alloc` with this
+        // exact layout in `from_builder` and has not been freed since;
+        // the allocator owns it exclusively.
+        unsafe { std::alloc::dealloc(self.buffer.as_ptr(), layout) };
     }
 }
 
@@ -324,15 +333,27 @@ impl Drop for BumpAllocator {
     clippy::non_send_fields_in_send_ty,
     reason = "DropEntry pointers alias storage owned by this allocator; the Send obligation on registered values is enforced at compile time by the T: Send bound on alloc_with_drop"
 )]
-// SAFETY: `BumpAllocator` owns its backing buffer and drop registry
-// outright — no shared state escapes. The `*mut u8` fields inside
-// `DropEntry` only point into storage owned by the same allocator, so
-// transferring the allocator transfers the pointed-to data with it.
-// The `Send` obligation on values registered via `alloc_with_drop`
-// is enforced by the `T: Send` bound on that method, so every drop_fn
-// stored here is sound to invoke on whatever thread now owns the
-// allocator.
+// SAFETY: `BumpAllocator` owns its `NonNull<u8>` backing buffer and
+// drop registry outright — no shared state escapes. The `*mut u8`
+// fields inside `DropEntry` only point into the same owned region,
+// so transferring the allocator transfers the pointed-to data with
+// it. The `T: Send` bound on `alloc_with_drop` ensures every
+// registered drop_fn is sound to invoke on whatever thread now owns
+// the allocator.
 unsafe impl Send for BumpAllocator {}
+
+#[inline]
+const fn align_up(addr: usize, align: usize) -> usize {
+    (addr + align - 1) & !(align - 1)
+}
+
+#[inline]
+fn buffer_layout(bytes: usize) -> Result<Layout, ArenaError> {
+    Layout::from_size_align(bytes, MAX_ALIGN).map_err(|_| ArenaError::Exhausted {
+        requested: bytes,
+        available: 0,
+    })
+}
 
 #[cfg(test)]
 mod tests {
