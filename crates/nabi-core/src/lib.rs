@@ -7,14 +7,18 @@
 //! - [`AffinityHint`], [`SchedulingHint`] — task placement and scheduler hints
 //! - [`FlatLayout`] — marker trait for types with stable byte layout
 //! - [`Namespace`] — logical task scope
-//!
-//! Future modules: `cancellation`.
+//! - [`CancellationKind`], [`CancellationPolicy`], [`CancellationContext`] —
+//!   three-axis cancellation model
 
+pub mod cancellation;
 pub mod flat;
 pub mod hint;
 pub mod id;
 pub mod namespace;
 
+pub use cancellation::{
+    AlreadyCancelledBehavior, CancellationContext, CancellationKind, CancellationPolicy,
+};
 pub use flat::FlatLayout;
 pub use hint::{AffinityHint, SchedulingHint};
 pub use id::{Nid, NidError};
