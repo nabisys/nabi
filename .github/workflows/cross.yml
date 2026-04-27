@@ -1,0 +1,67 @@
+name: Cross
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -Dwarnings
+
+jobs:
+  macos:
+    name: Cross-compile (macOS)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            code:
+              - 'crates/**'
+              - 'Cargo.toml'
+              - 'Cargo.lock'
+              - 'rust-toolchain.toml'
+      - if: steps.filter.outputs.code == 'true'
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.95"
+      - if: steps.filter.outputs.code == 'true'
+        uses: Swatinem/rust-cache@v2
+      - if: steps.filter.outputs.code == 'true'
+        run: cargo check --workspace --all-targets --all-features
+      - if: steps.filter.outputs.code != 'true'
+        run: echo "no code changes; skipped."
+
+  windows:
+    name: Cross-compile (Windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            code:
+              - 'crates/**'
+              - 'Cargo.toml'
+              - 'Cargo.lock'
+              - 'rust-toolchain.toml'
+      - if: steps.filter.outputs.code == 'true'
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.95"
+      - if: steps.filter.outputs.code == 'true'
+        uses: Swatinem/rust-cache@v2
+      - if: steps.filter.outputs.code == 'true'
+        run: cargo check --workspace --all-targets --all-features
+      - if: steps.filter.outputs.code != 'true'
+        run: echo "no code changes; skipped."

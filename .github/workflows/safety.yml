@@ -1,0 +1,108 @@
+name: Safety
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "0 15 * * *"
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Branch/SHA to test'
+        required: false
+        default: 'main'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  miri:
+    name: Miri
+    runs-on: ubuntu-latest
+    env:
+      MIRIFLAGS: -Zmiri-strict-provenance -Zmiri-retag-fields -Zmiri-symbolic-alignment-check
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+      - if: github.event_name == 'pull_request' || github.event_name == 'push'
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            unsafe:
+              - 'crates/nabi-core/**'
+              - 'crates/nabi-runtime/**'
+              - 'crates/nabi-io/**'
+              - 'crates/nabi-fs/**'
+      - id: gate
+        run: |
+          if [[ "${{ github.event_name }}" == "schedule" || "${{ github.event_name }}" == "workflow_dispatch" || "${{ steps.filter.outputs.unsafe }}" == "true" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.gate.outputs.run == 'true'
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: nightly
+          components: miri, rust-src
+      - if: steps.gate.outputs.run == 'true'
+        uses: Swatinem/rust-cache@v2
+      - if: steps.gate.outputs.run == 'true'
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-nextest
+      - if: steps.gate.outputs.run == 'true'
+        run: cargo +nightly miri setup
+      - if: steps.gate.outputs.run == 'true'
+        run: cargo +nightly miri nextest run --profile miri
+      - if: steps.gate.outputs.run != 'true'
+        run: echo "no unsafe-heavy changes; skipped."
+
+  loom:
+    name: Loom
+    runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS: --cfg loom
+      LOOM_MAX_PREEMPTIONS: "3"
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+      - if: github.event_name == 'pull_request' || github.event_name == 'push'
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            concurrency:
+              - 'crates/nabi-runtime/src/task/state.rs'
+              - 'crates/nabi-runtime/src/scheduler/**'
+              - 'crates/nabi-runtime/src/sync/**'
+      - id: gate
+        run: |
+          if [[ "${{ github.event_name }}" == "schedule" || "${{ github.event_name }}" == "workflow_dispatch" || "${{ steps.filter.outputs.concurrency }}" == "true" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.gate.outputs.run == 'true'
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.95"
+      - if: steps.gate.outputs.run == 'true'
+        uses: Swatinem/rust-cache@v2
+      - if: steps.gate.outputs.run == 'true'
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-nextest
+      - if: steps.gate.outputs.run == 'true'
+        run: cargo nextest run --release --profile loom -p nabi-runtime --lib
+      - if: steps.gate.outputs.run != 'true'
+        run: echo "no concurrency-primitive changes; skipped."

@@ -1,0 +1,59 @@
+name: Meta
+
+on:
+  pull_request_target:
+    types: [opened, edited, reopened, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  title:
+    name: PR Title
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    env:
+      PR_TITLE: ${{ github.event.pull_request.title }}
+    steps:
+      - run: |
+          set -euo pipefail
+          TYPES='feat|fix|perf|refactor|docs|test|build|ci|chore|revert'
+          SCOPES='ci|core|io|net|fs|tls|runtime|orchestration|compat|macros|lens|scope|test|facade|workspace|deps'
+          TITLE_STRIPPED=$(printf '%s' "$PR_TITLE" | sed -E 's/ \(#[0-9]+\)$//')
+          PATTERN="^($TYPES)\\(($SCOPES)(/[a-z][a-z0-9_]*)?\\)!?: [a-z].+[^.]$"
+          if ! [[ "$TITLE_STRIPPED" =~ $PATTERN ]]; then
+            echo "::error title=Invalid PR title::Got \"$TITLE_STRIPPED\"; expected type(scope): subject" >&2
+            echo "  Types:  $TYPES" >&2
+            echo "  Scopes: $SCOPES" >&2
+            exit 1
+          fi
+          subj="${TITLE_STRIPPED#*: }"
+          if [ "${#subj}" -gt 50 ]; then
+            echo "::error title=Subject too long::\"$subj\" (${#subj}/50)" >&2
+            exit 1
+          fi
+          echo "PR title OK: $TITLE_STRIPPED"
+
+  labels:
+    name: PR Labels
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      PR: ${{ github.event.pull_request.number }}
+      REPO: ${{ github.repository }}
+    steps:
+      - run: |
+          set -euo pipefail
+          labels=$(gh pr view "$PR" --repo "$REPO" --json labels --jq '.labels[].name')
+          if ! printf '%s\n' "$labels" | grep -qE '^crate:'; then
+            echo "::error title=Missing crate label::PR needs at least one crate:* label" >&2
+            printf '%s\n' "${labels:-(none)}" | sed 's/^/    - /' >&2
+            exit 1
+          fi
+          echo "PR labels OK"
