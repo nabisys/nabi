@@ -60,6 +60,13 @@ wrappers = [
 ]
 
 [advisories]
+# RustSec advisory database. With version = 2 every advisory is denied by
+# default; downgrade per id only via `ignore` below.
+db-path = "~/.cargo/advisory-db"
+db-urls = ["https://github.com/RustSec/advisory-db"]
+version = 2
+yanked = "deny"
+
 # Each ignore must record (a) the impacted crate path, (b) why we are not
 # exposed in practice, and (c) the upstream signal that lets us drop the
 # entry. Re-evaluate at every dependency bump.
