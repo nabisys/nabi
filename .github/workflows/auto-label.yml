@@ -1,4 +1,4 @@
-name: Label
+name: Auto Label
 
 on:
   pull_request_target:
@@ -31,14 +31,9 @@ jobs:
       PR: ${{ github.event.pull_request.number }}
       REPO: ${{ github.repository }}
     steps:
-      - name: Detect unsafe keyword in diff
-        run: |
+      - run: |
           set -euo pipefail
-          added=$(gh pr diff "$PR" --repo "$REPO" \
-            | grep -E '^\+' | grep -vE '^\+\+\+' || true)
+          added=$(gh pr diff "$PR" --repo "$REPO" | grep -E '^\+' | grep -vE '^\+\+\+' || true)
           if echo "$added" | grep -qE '\bunsafe\b'; then
-            echo "unsafe keyword detected in diff; applying safety:unsafe"
             gh pr edit "$PR" --repo "$REPO" --add-label "safety:unsafe"
-          else
-            echo "no unsafe keyword in diff"
           fi

@@ -1,22 +1,10 @@
-name: Deny
+name: Audit
 
 on:
   push:
     branches: [main]
-    paths:
-      - "crates/**/Cargo.toml"
-      - "Cargo.toml"
-      - "Cargo.lock"
-      - "deny.toml"
-      - ".github/workflows/deny.yml"
   pull_request:
     branches: [main]
-    paths:
-      - "crates/**/Cargo.toml"
-      - "Cargo.toml"
-      - "Cargo.lock"
-      - "deny.toml"
-      - ".github/workflows/deny.yml"
   workflow_dispatch:
 
 concurrency:
@@ -25,7 +13,7 @@ concurrency:
 
 jobs:
   deny:
-    name: cargo-deny
+    name: Audit
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
