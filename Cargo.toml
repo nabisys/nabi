@@ -52,6 +52,54 @@ clone_on_ref_ptr = "warn"
 unwrap_used = "deny"
 expect_used = "deny"
 
+[workspace.metadata.cargo-machete]
+# cargo-machete flags every workspace dep that has no `use` site. M1 ships
+# crate skeletons that pre-declare deps for the planned import direction
+# (see crate-boundaries.md), so most internal `nabi-*` deps and many third
+# -party crates appear "unused" until their owning crate is implemented.
+#
+# Listing them as `ignored` is a deliberate placeholder ack: the dep is
+# expected to be consumed, but the body of the crate is not yet written.
+# Each entry should be removed once the dep gains a real `use` in the
+# target crate. If a dep is removed permanently, drop it from this list
+# AND from the relevant `[dependencies]` block.
+ignored = [
+  # nabi-macros — proc-macro skeleton; trio comes online with first macro.
+  "proc-macro2",
+  "quote",
+  "syn",
+  # Internal nabi-* deps pre-declared per crate-boundaries.md.
+  "nabi-core",
+  "nabi-io",
+  "nabi-net",
+  "nabi-fs",
+  "nabi-tls",
+  "nabi-runtime",
+  "nabi-orchestration",
+  "nabi-compat",
+  "nabi-lens",
+  "nabi-macros",
+  # Third-party placeholders awaiting their owning crate's body.
+  "bitflags",
+  "crossbeam-deque",
+  "socket2",
+  "rustls",
+  "rustls-pki-types",
+  "webpki-roots",
+  "native-tls",
+  "tokio",
+  "tokio-util",
+  "futures-core",
+  "futures-util",
+  "pin-project-lite",
+  "ratatui",
+  "crossterm",
+  "clap",
+  "opentelemetry",
+  "opentelemetry-otlp",
+  "prometheus",
+]
+
 [workspace.dependencies]
 # internal
 nabi-core = { path = "crates/nabi-core", version = "0.0.1" }

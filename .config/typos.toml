@@ -1,0 +1,20 @@
+# typos configuration for the Nabi workspace.
+#
+# typos catches common spelling mistakes across source and docs. The
+# config is intentionally lean — domain terms (nabi, nid, axon, …) are
+# only added to extend-words once the linter actually flags them, so
+# the allow-list never drifts ahead of real false positives.
+#
+# Invocation:
+#   typos --config .config/typos.toml
+
+[default.extend-words]
+# Crate names and domain terms typos misreads as misspellings.
+ratatui = "ratatui"
+
+[files]
+extend-exclude = [
+  "target/",
+  "*.lock",
+  ".git/",
+]
