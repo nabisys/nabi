@@ -1,0 +1,37 @@
+# nextest configuration for the Nabi workspace.
+#
+# Profiles:
+#   default  — Local dev: fail-fast on first error, modest slow-test timeout.
+#   ci       — CI: collect every failure, JUnit XML, no retries.
+#   miri     — Miri: serialised, very long timeouts. Run via `cargo m`.
+#   loom     — Loom: serialised, longest timeouts (explores all interleavings).
+#
+# Why `retries = 0` everywhere:
+#   nabi treats race conditions as a primary defect class. Retries mask
+#   flaky behaviour that is often a real race — every flake should surface
+#   as a failure, not be retried away.
+
+[profile.default]
+retries = 0
+fail-fast = true
+slow-timeout = { period = "60s", terminate-after = 2 }
+
+[profile.ci]
+retries = 0
+fail-fast = false
+slow-timeout = { period = "120s", terminate-after = 2 }
+junit = { path = "junit.xml" }
+
+[profile.miri]
+retries = 0
+slow-timeout = { period = "300s", terminate-after = 1 }
+# Miri instruments every memory access; parallel threads compound the
+# slowdown and cause spurious timeouts. Serialise.
+test-threads = 1
+
+[profile.loom]
+retries = 0
+slow-timeout = { period = "600s", terminate-after = 1 }
+# Loom explores every thread interleaving — already expensive. Parallel
+# test threads add noise and inflate runtime. Serialise.
+test-threads = 1

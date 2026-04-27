@@ -3,6 +3,11 @@
 # Aliases provide shortcuts for the commands used during development.
 # Some targets require additional flags that cannot be expressed as aliases;
 # those are documented inline where relevant.
+#
+# Test runner: cargo-nextest (https://nexte.st)
+#   Install once:  cargo install cargo-nextest --locked
+#   Profiles live in `.config/nextest.toml` (default / ci / miri / loom).
+#   Doctests are not supported by nextest — use `cargo td` for those.
 
 [alias]
 
@@ -12,6 +17,17 @@
 # without running tests.
 ci = "check --workspace --all-features --all-targets"
 
+# Run the workspace test suite (nextest, default profile).
+t = "nextest run --workspace"
+
+# Run the workspace test suite with the CI profile
+# (collect-all-failures + JUnit XML).
+tci = "nextest run --profile ci --workspace --all-features"
+
+# Run all doctests across the workspace. nextest does not support doctests,
+# so this falls through to plain `cargo test --doc`.
+td = "test --doc --workspace"
+
 # Full clippy pass with all workspace lints promoted to errors.
 # Mirrors the CI clippy job.
 lint = "clippy --workspace --all-features --all-targets -- -D warnings"
@@ -19,18 +35,15 @@ lint = "clippy --workspace --all-features --all-targets -- -D warnings"
 # Build and open the rendered documentation for every crate.
 d = "doc --workspace --all-features --no-deps --open"
 
-# Run the workspace test suite.
-t = "test --workspace"
-
 # --- per-crate tests ---
 #
 # Scoped to the crates where most active development happens.
-# For other crates, call `cargo test -p <crate>` directly.
+# For other crates, call `cargo nextest run -p <crate>` directly.
 
-tc = "test -p nabi-core"
-ti = "test -p nabi-io"
-tr = "test -p nabi-runtime"
-to = "test -p nabi-orchestration"
+tc = "nextest run -p nabi-core"
+ti = "nextest run -p nabi-io"
+tr = "nextest run -p nabi-runtime"
+to = "nextest run -p nabi-orchestration"
 
 # --- specialised test suites ---
 
@@ -40,12 +53,12 @@ to = "test -p nabi-orchestration"
 #     MIRIFLAGS="-Zmiri-strict-provenance -Zmiri-retag-fields -Zmiri-symbolic-alignment-check" \
 #         cargo m -p nabi-core
 #
-m = "+nightly miri test"
+m = "+nightly miri nextest run --profile miri"
 
 # Loom — permutation testing for concurrency code. Requires the `--cfg loom`
-# RUSTFLAGS to activate loom-aware code paths. The alias builds in release
-# mode since loom explores many interleavings and is too slow otherwise:
+# RUSTFLAGS to activate loom-aware code paths. Runs in release mode since
+# loom explores many interleavings and is too slow otherwise:
 #
 #     RUSTFLAGS="--cfg loom" LOOM_MAX_PREEMPTIONS=3 cargo loom
 #
-loom = "test --release -p nabi-runtime --lib"
+loom = "nextest run --release --profile loom -p nabi-runtime --lib"

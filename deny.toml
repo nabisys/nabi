@@ -33,13 +33,39 @@ ignore = false
 multiple-versions = "deny"
 wildcards = "allow"
 
+# Transitive duplicates we cannot collapse without forking upstream crates.
+# Each entry must record why a single version is unreachable today; revisit
+# when the upstream chain releases a unifying version.
+skip = [
+  { crate = "getrandom", reason = "rand_core 0.9 needs 0.3; tempfile pulls 0.4" },
+  { crate = "hashbrown", reason = "tokio-util on 0.15; ratatui/lru on 0.16" },
+  { crate = "thiserror", reason = "prometheus 0.14 still on v1; ratatui/opentelemetry on v2" },
+  { crate = "thiserror-impl", reason = "follows thiserror" },
+]
+
 [[bans.deny]]
 name = "tokio"
 reason = "nabi-runtime is the async runtime; tokio is allowed in nabi-compat only"
-wrappers = ["nabi-compat"]
+# All wrappers below are transitive deps of nabi-compat. Keeping the list
+# explicit (rather than skip-tree) so deny still flags any new crate that
+# starts depending on tokio outside the compat boundary.
+wrappers = [
+  "nabi-compat",
+  "hyper",
+  "hyper-util",
+  "tower",
+  "tokio-util",
+  "reqwest",
+  "tokio-stream",
+]
 
 [advisories]
-ignore = []
+# Each ignore must record (a) the impacted crate path, (b) why we are not
+# exposed in practice, and (c) the upstream signal that lets us drop the
+# entry. Re-evaluate at every dependency bump.
+ignore = [
+  { id = "RUSTSEC-2026-0009", reason = "time 0.3.45 reaches us only through nabi-scope -> ratatui-widgets; ratatui formats timestamps for display and does not parse RFC 2822 from user input, so the stack-exhaustion vector is unreachable. Cannot bump to 0.3.47 without raising workspace rust-version above 1.85 (resolver v3 floor). Drop once ratatui releases with time >=0.3.47." },
+]
 
 [sources]
 allow-registry = ["https://github.com/rust-lang/crates.io-index"]
