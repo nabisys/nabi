@@ -7,7 +7,6 @@ on:
       - "crates/nabi-runtime/**"
       - "!crates/nabi-runtime/LICENSE-*"
       - "!crates/nabi-runtime/**/*.md"
-      - "Cargo.lock"
       - ".github/workflows/loom.yml"
   pull_request:
     branches: [main]
@@ -15,7 +14,6 @@ on:
       - "crates/nabi-runtime/**"
       - "!crates/nabi-runtime/LICENSE-*"
       - "!crates/nabi-runtime/**/*.md"
-      - "Cargo.lock"
       - ".github/workflows/loom.yml"
   schedule:
     - cron: "0 2 * * 0"
