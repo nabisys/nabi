@@ -28,6 +28,7 @@ unsafe_op_in_unsafe_fn = "deny"
 missing_docs = "warn"
 unreachable_pub = "warn"
 unused_crate_dependencies = "warn"
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(loom)'] }
 
 [workspace.lints.clippy]
 all = { level = "deny", priority = -1 }

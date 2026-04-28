@@ -38,10 +38,14 @@ windows-sys = { workspace = true, features = [
   "Win32_System_Diagnostics_Debug",
 ] }
 
+# loom is only linked when `RUSTFLAGS="--cfg loom"` is set. Production builds
+# never depend on it.
+[target.'cfg(loom)'.dependencies]
+loom.workspace = true
+
 [dev-dependencies]
 nabi-test.workspace = true
 proptest.workspace = true
-loom.workspace = true
 
 [lints]
 workspace = true
