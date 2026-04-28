@@ -3,6 +3,7 @@
 //! Defines the per-process machinery on which orchestration and I/O run:
 //!
 //! - [`memory`] — per-worker generational slab for spawn-path tasks
+//! - [`task`] — packed task handle and Send/!Send mode markers
 //!
 //! No I/O backends — those live in `nabi-io`.
 #![allow(
@@ -11,3 +12,4 @@
 )]
 
 pub mod memory;
+pub mod task;
