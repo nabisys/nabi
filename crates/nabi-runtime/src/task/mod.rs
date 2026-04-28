@@ -1,24 +1,19 @@
-//! `nabi-runtime` `task/` — typed task handles, mode markers, and lifecycle
-//! state.
-//!
-//! Surfaces grow incrementally per the M1 P2 plan:
+//! `nabi-runtime` `task/` — typed task handles, mode markers, lifecycle
+//! state, the per-task control block, and intrusive children helpers.
 //!
 //! - [`TaskRef`] — 64-bit packed handle, path-agnostic over slab and arena.
 //! - [`Affine`] / [`Stealing`] — phantom markers selected by the [`Mode`] trait.
-//! - `AtomicTaskState` — atomic lifecycle (crate-internal; consumed by the
-//!   upcoming header + waker layer).
-//!
-//! Subsequent PRs add the intrusive children list, the `Header + Cell` layout,
-//! the `IndexWaker` vtable, and the public `TaskHandle<T, Mode>` surface.
+//! - `AtomicTaskState` — atomic CAS-based lifecycle (crate-internal).
+//! - `TaskHeader` — repr(C) control block (crate-internal).
+//! - `children` — intrusive child list helpers over a `TaskStorage`.
 
+mod children;
+mod header;
 mod marker;
 mod state;
 mod task_ref;
 
 pub use marker::{Affine, Mode, Stealing};
-#[allow(
-    unused_imports,
-    reason = "consumed by upcoming P2 PR4 task::header and task::waker"
-)]
+#[allow(unused_imports, reason = "no non-test caller in this revision")]
 pub(crate) use state::{AtomicTaskState, TaskState};
 pub use task_ref::TaskRef;
