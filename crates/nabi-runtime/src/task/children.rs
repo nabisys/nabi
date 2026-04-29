@@ -188,7 +188,7 @@ fn locate<S: TaskStorage>(
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, not(loom)))]
 mod tests {
     use super::*;
 
@@ -247,7 +247,7 @@ mod tests {
     /// Mint a [`TaskRef`] with explicit `(worker, generation, index)` so tests can
     /// distinguish stale vs live handles. `MockStorage` keys on the full raw
     /// bits, so the arena-vs-slab tag is irrelevant here.
-    fn fake_ref(worker_id: u8, generation: u32, index: u32) -> TaskRef {
+    const fn fake_ref(worker_id: u8, generation: u32, index: u32) -> TaskRef {
         TaskRef::from_arena(worker_id, index, Generation(generation))
     }
 

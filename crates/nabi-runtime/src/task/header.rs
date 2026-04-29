@@ -316,7 +316,7 @@ impl<F: Future> Slot<F> {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, not(loom)))]
 mod tests {
     use super::*;
 
@@ -370,7 +370,7 @@ mod tests {
         }
     }
 
-    fn dummy_waker() -> Waker {
+    const fn dummy_waker() -> Waker {
         const VTABLE: RawWakerVTable = RawWakerVTable::new(
             |_| RawWaker::new(ptr::null(), &VTABLE),
             |_| {},
