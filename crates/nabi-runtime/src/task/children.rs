@@ -188,16 +188,32 @@ fn locate<S: TaskStorage>(
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, not(loom)))]
 mod tests {
     use super::*;
 
+    use core::future::Future;
+    use core::pin::Pin;
+    use core::task::{Context, Poll};
     use std::collections::HashMap;
 
     use nabi_core::id::Nid;
     use nabi_core::namespace::Namespace;
 
     use crate::memory::Generation;
+    use crate::task::header::Slot;
+
+    /// Trivial future used purely to materialise a static `TaskVTable` so
+    /// `MockStorage` can mint headers; children-list logic never invokes
+    /// the vtable, only reads the `&'static TaskVTable` reference.
+    struct InertFuture;
+
+    impl Future for InertFuture {
+        type Output = ();
+        fn poll(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<()> {
+            Poll::Pending
+        }
+    }
 
     struct MockStorage(HashMap<u64, TaskHeader>);
 
@@ -209,7 +225,11 @@ mod tests {
         fn insert_fresh(&mut self, task_ref: TaskRef) {
             self.0.insert(
                 task_ref.raw(),
-                TaskHeader::new(Nid::detached(), Namespace::ROOT),
+                TaskHeader::new(
+                    Nid::detached(),
+                    Namespace::ROOT,
+                    &Slot::<InertFuture>::VTABLE,
+                ),
             );
         }
     }
@@ -227,7 +247,7 @@ mod tests {
     /// Mint a [`TaskRef`] with explicit `(worker, generation, index)` so tests can
     /// distinguish stale vs live handles. `MockStorage` keys on the full raw
     /// bits, so the arena-vs-slab tag is irrelevant here.
-    fn fake_ref(worker_id: u8, generation: u32, index: u32) -> TaskRef {
+    const fn fake_ref(worker_id: u8, generation: u32, index: u32) -> TaskRef {
         TaskRef::from_arena(worker_id, index, Generation(generation))
     }
 
