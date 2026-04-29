@@ -8,9 +8,9 @@
 //! for a spurious failure and retried indefinitely.
 //!
 //! ```text
-//! Sleeping ──wake()──► Woken ──poll──► Running ──► Done       (terminal)
-//!                                    ↘──────────► Cancelled   (terminal)
-//!                                    ↘──────────► Failed      (terminal)
+//! Sleeping ──wake()──► Woken ──poll──► Running ──Ready──► Done ──join──► Taken (terminal)
+//!                                              ↘──────────► Cancelled         (terminal)
+//!                                              ↘──────────► Failed            (terminal)
 //! ```
 #![allow(
     dead_code,
@@ -37,19 +37,26 @@ pub(crate) enum TaskState {
     Woken = 1,
     /// Currently being polled on a worker.
     Running = 2,
-    /// Terminal — completed with `Poll::Ready`.
+    /// Output written to the cell, awaiting [`TaskState::Taken`] by the join
+    /// handle. Not terminal — a join is expected to follow.
     Done = 3,
     /// Terminal — cancelled before completion.
     Cancelled = 4,
     /// Terminal — panicked or returned an unrecoverable error.
     Failed = 5,
+    /// Terminal — the join handle has read and consumed the output.
+    Taken = 6,
 }
 
 impl TaskState {
-    /// Returns `true` for [`TaskState::Done`], [`TaskState::Cancelled`],
-    /// and [`TaskState::Failed`].
+    /// Returns `true` for [`TaskState::Cancelled`], [`TaskState::Failed`],
+    /// and [`TaskState::Taken`].
+    ///
+    /// [`TaskState::Done`] is *not* terminal: the output is sitting in the
+    /// cell waiting for the join handle to consume it via the
+    /// `Done → Taken` transition.
     pub(crate) const fn is_terminal(self) -> bool {
-        matches!(self, Self::Done | Self::Cancelled | Self::Failed)
+        matches!(self, Self::Cancelled | Self::Failed | Self::Taken)
     }
 
     /// Recovers a [`TaskState`] from a raw `u8` discriminant.
@@ -65,6 +72,7 @@ impl TaskState {
             3 => Self::Done,
             4 => Self::Cancelled,
             5 => Self::Failed,
+            6 => Self::Taken,
             _ => panic!("invalid TaskState discriminant"),
         }
     }
@@ -242,16 +250,43 @@ mod tests {
     #[test]
     fn terminal_rejects_wake_and_transition() {
         let state = AtomicTaskState::new();
-        let Ok(()) = state.transition(TaskState::Sleeping, TaskState::Done) else {
-            panic!("Sleeping -> Done must succeed");
+        let Ok(()) = state.transition(TaskState::Sleeping, TaskState::Cancelled) else {
+            panic!("Sleeping -> Cancelled must succeed");
         };
         match state.wake() {
-            Err(TaskState::Done) => {}
-            other => panic!("wake on Done must fail, got {other:?}"),
+            Err(TaskState::Cancelled) => {}
+            other => panic!("wake on Cancelled must fail, got {other:?}"),
         }
-        match state.transition(TaskState::Done, TaskState::Sleeping) {
-            Err(TaskState::Done) => {}
-            other => panic!("Done is terminal, expected Err(Done) got {other:?}"),
+        match state.transition(TaskState::Cancelled, TaskState::Sleeping) {
+            Err(TaskState::Cancelled) => {}
+            other => panic!("Cancelled is terminal, expected Err(Cancelled) got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn done_to_taken_succeeds() {
+        let state = AtomicTaskState::new();
+        let Ok(()) = state.transition(TaskState::Sleeping, TaskState::Running) else {
+            panic!("Sleeping -> Running must succeed");
+        };
+        let Ok(()) = state.transition(TaskState::Running, TaskState::Done) else {
+            panic!("Running -> Done must succeed");
+        };
+        let Ok(()) = state.transition(TaskState::Done, TaskState::Taken) else {
+            panic!("Done -> Taken must succeed (output consumed by join handle)");
+        };
+        assert_eq!(state.load(), TaskState::Taken);
+    }
+
+    #[test]
+    fn taken_rejects_further_transition() {
+        let state = AtomicTaskState::new();
+        let Ok(()) = state.transition(TaskState::Sleeping, TaskState::Taken) else {
+            panic!("Sleeping -> Taken must succeed");
+        };
+        match state.transition(TaskState::Taken, TaskState::Sleeping) {
+            Err(TaskState::Taken) => {}
+            other => panic!("Taken is terminal, expected Err(Taken) got {other:?}"),
         }
     }
 
@@ -260,9 +295,10 @@ mod tests {
         assert!(!TaskState::Sleeping.is_terminal());
         assert!(!TaskState::Woken.is_terminal());
         assert!(!TaskState::Running.is_terminal());
-        assert!(TaskState::Done.is_terminal());
+        assert!(!TaskState::Done.is_terminal());
         assert!(TaskState::Cancelled.is_terminal());
         assert!(TaskState::Failed.is_terminal());
+        assert!(TaskState::Taken.is_terminal());
     }
 
     #[test]
@@ -274,6 +310,7 @@ mod tests {
             TaskState::Done,
             TaskState::Cancelled,
             TaskState::Failed,
+            TaskState::Taken,
         ] {
             assert_eq!(TaskState::from_u8(variant as u8), variant);
         }
